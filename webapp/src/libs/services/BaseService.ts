@@ -11,10 +11,10 @@ interface ServiceRequest {
 }
 
 const noResponseBodyStatusCodes = [202, 204];
-
-export const BackendServiceUrl =
+console.log(window.ENV_CONFIG);
+export const BackendServiceUrl: string =
     process.env.REACT_APP_BACKEND_URI == null || process.env.REACT_APP_BACKEND_URI.trim() === ''
-        ? window.origin
+        ? window.ENV_CONFIG.REACT_APP_BACKEND_URI
         : process.env.REACT_APP_BACKEND_URI;
 export const NetworkErrorMessage = '\n\nPlease check that your backend is running and that it is accessible by the app';
 
