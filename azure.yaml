@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: copilot
+metadata:
+  template: copilot@0.0.1-beta
+services:
+  web:
+    project: ./webapp
+    dist: build
+    language: js
+    host: staticwebapp
+    hooks:
+      predeploy:
+        posix:
+          shell: sh
+          run: node entrypoint.cjs -o ./build/env-config.js
+          continueOnError: false
+          interactive: true
+        windows:
+          shell: pwsh
+          run: node entrypoint.cjs -o ./build/env-config.js
+          continueOnError: false
+          interactive: true
+  api:
+    project: ./webapi
+    language: dotnet
+    host: appservice
+  searcherplugin:
+    project: ./plugins/web-searcher
+    host: appservice
+    language: dotnet
+  memorypipeline:
+    project: ./memorypipeline
+    language: dotnet
+    host: appservice
+
+
