@@ -11,9 +11,6 @@
     "principalId": {
       "value": "${AZURE_PRINCIPAL_ID}"
     },
-    "useKeyVault": {
-      "value": "${USE_KEY_VAULT=true}"
-    },
     "azureAdTenantId": {
       "value": "${AZURE_AD_TENANT_ID}"
     },

@@ -9,7 +9,6 @@ param environmentName string
 @description('Primary location for all resources')
 param location string
 param resourceGroupName string = ''
-
 param openAIServiceName string = ''
 param openAISkuName string = 'S0'
 param embeddingDeploymentName string = 'text-embedding-ada-002'
@@ -31,34 +30,30 @@ param webApiName string = ''
 param storageAccountName string = ''
 param azureCognitiveSearchName string = ''
 param functionAppWeb string = ''
-
-@description('Whether to deploy the web searcher plugin, which requires a Bing resource')
-param deployWebSearcherPlugin bool = true
-
+param appServiceMemoryPipelineName string = ''
+param appServiceQdrantName string = ''
+param storageFileShareName string = 'aciqdrantshare'
+param cosmosDbAccountName string = ''
+param speechName string = ''
 @allowed([
   'AzureCognitiveSearch'
   'Qdrant'
 ])
 param memoryStore string = 'AzureCognitiveSearch'
-param appServiceMemoryPipelineName string = ''
-param appServiceQdrantName string = ''
-param storageFileShareName string = 'aciqdrantshare'
-param cosmosDbAccountName string = ''
+@description('Whether to deploy the web searcher plugin, which requires a Bing resource')
+param deployWebSearcherPlugin bool = false
 @description('Whether to deploy Cosmos DB for persistent chat storage')
 param deployCosmosDB bool = false
-param speechName string = ''
 @description('Whether to deploy Azure Speech Services to enable input by voice')
 param deploySpeechServices bool = false
 param ocrAccountName string = ''
+param azureAdTenantId string = ''
+param frontendClientId string = ''
+param webApiClientId string = ''
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
 var tags = { 'azd-env-name': environmentName }
-
-//todo
-param azureAdTenantId string = ''
-param frontendClientId string = ''
-param webApiClientId string = ''
 
 resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
   name: !empty(resourceGroupName) ? resourceGroupName : '${abbrs.resourcesResourceGroups}${environmentName}'
@@ -67,7 +62,7 @@ resource rg 'Microsoft.Resources/resourceGroups@2021-04-01' = {
 }
 
 module openAI './core/ai/cognitiveservices.bicep' = {
-  name: 'opanai'
+  name: 'openai'
   scope: rg
   params: {
     location: location
@@ -129,7 +124,6 @@ module api './app/api.bicep' = {
     functionAppWebSearcherPlugin: deployWebSearcherPlugin ? functionAppWebSearcherPlugin.outputs.name : ''
     searcherPluginDefaultHostName: deployWebSearcherPlugin ? functionAppWebSearcherPlugin.outputs.defaulthost : ''
     allowedOrigins: [ '*' ]
-    // [ web.outputs.uri ]
     memoryStore: memoryStore
     virtualNetworkId0: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
     appServiceQdrantDefaultHost: memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
@@ -137,9 +131,9 @@ module api './app/api.bicep' = {
     cosmosConnectString: deployCosmosDB ? cosmos.outputs.cosmosConnectString : ''
     deploySpeechServices: deploySpeechServices
     speechAccount: deploySpeechServices ? speechAccount.outputs.name : ''
-    azureAdTenantId: azureAdTenantId //
-    frontendClientId: frontendClientId //
-    webApiClientId: webApiClientId //
+    azureAdTenantId: azureAdTenantId
+    frontendClientId: frontendClientId
+    webApiClientId: webApiClientId
   }
 }
 
@@ -209,7 +203,6 @@ module functionAppWebSearcherPlugin './app/searcherplugin.bicep' = if (deployWeb
     appInsightsInstrumentationKey: applicationInsights.outputs.instrumentationKey
     appServicePlanId: appServicePlan.outputs.id
     strorageAccount: storage.outputs.name
-    // deployWebSearcherPlugin: deployWebSearcherPlugin
   }
 }
 
@@ -218,7 +211,6 @@ module virtualNetwork 'app/virtualnetwork.bicep' = if (memoryStore == 'Qdrant') 
   name: 'virtualnetwork'
   params: {
     location: location
-    // memoryStore: memoryStore
   }
 }
 
@@ -228,6 +220,7 @@ module appServiceMemoryPipeline 'app/memorypipeline.bicep' = {
   params: {
     name: !empty(appServiceMemoryPipelineName) ? appServiceMemoryPipelineName : '${abbrs.webSitesAppService}app-${resourceToken}-memorypipeline'
     location: location
+    tags: union(tags, { 'azd-service-name': 'memorypipeline' }, { skweb: '1' })
     appServicePlanId: appServicePlan.outputs.id
     memoryStore: memoryStore
     virtualNetworkSubnetId: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
@@ -275,7 +268,6 @@ module appServiceQdrant 'app/qdrant.bicep' = if (memoryStore == 'Qdrant') {
   params: {
     location: location
     appServicePlanQdrantId: memoryStore == 'Qdrant' ? appServicePlanQdrant.outputs.id : ''
-    // memoryStore: memoryStore
     name: !empty(appServiceQdrantName) ? appServiceQdrantName : '${abbrs.webSitesAppService}qdrant-${resourceToken}'
     storageFileShareName: storageFileShareName
     strorageAccount: storage.outputs.name
@@ -289,7 +281,6 @@ module cosmos 'app/cosmosdb.bicep' = if (deployCosmosDB) {
   name: 'cosmosdb'
   params: {
     location: location
-    // deployCosmosDB: deployCosmosDB
     name: !empty(cosmosDbAccountName) ? cosmosDbAccountName : 'cosmos-${resourceToken}'
   }
 }
@@ -305,7 +296,7 @@ module speechAccount 'app/speech.bicep' = if (deploySpeechServices) {
 
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
-output REACT_APP_BACKEND_URI string = api.outputs.weburl
+output REACT_APP_BACKEND_URI string = api.outputs.url
 output REACT_APP_APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
 output REACT_APP_WEB_BASE_URL string = web.outputs.uri
 output AZURE_PLUGIN_NAME array = concat(

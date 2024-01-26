@@ -8,7 +8,7 @@ param memoryStore string
 param storageFileShareName string
 
 resource storage 'Microsoft.Storage/storageAccounts@2022-09-01' = {
-  name: name // Not using full unique name to avoid hitting 24 char limit
+  name: name
   location: location
   kind: 'StorageV2'
   sku: {

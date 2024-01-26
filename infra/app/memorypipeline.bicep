@@ -15,6 +15,7 @@ param appServiceQdrantDefaultHostName string
 param AzureCognitiveSearchName string
 param ocrAccountEndpoint string
 param ocrAccountName string
+param tags object = {}
 var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.Storage/storageAccounts', storageAccountName)
 
@@ -22,9 +23,7 @@ resource appServiceMemoryPipeline 'Microsoft.Web/sites@2022-09-01' = {
   name: name
   location: location
   kind: 'app'
-  tags: {
-    skweb: '1'
-  }
+  tags: tags
   properties: {
     serverFarmId: appServicePlanId
     virtualNetworkSubnetId: memoryStore == 'Qdrant' ? virtualNetworkSubnetId : null

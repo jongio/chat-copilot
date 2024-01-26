@@ -71,7 +71,7 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
     webSubnetConnection
   ]
   properties: {
-    alwaysOn: false
+    alwaysOn: true
     detailedErrorLoggingEnabled: true
     minTlsVersion: '1.2'
     netFrameworkVersion: 'v7.0'
@@ -79,10 +79,10 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
     vnetRouteAllEnabled: true
     webSocketsEnabled: true
     appSettings: concat([
-        // {
-        //   name: 'Authentication:Type'
-        //   value: 'AzureAd'
-        // }
+        {
+          name: 'Authentication:Type'
+          value: (azureAdTenantId == '' || webApiClientId == '' || frontendClientId == '') ? 'None' : 'AzureAd'
+        }
         {
           name: 'Authentication:AzureAd:Instance'
           value: azureAdInstance
@@ -134,7 +134,6 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         {
           name: 'ChatStore:Cosmos:ConnectionString'
           value: cosmosConnectString
-          // cosmosAccount.listConnectionStrings().connectionStrings[0].connectionString : ''
         }
         {
           name: 'AzureSpeech:Region'
@@ -146,36 +145,36 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'AllowedOrigins'
-          value: '[*]' // Defer list of allowed origins to the Azure service app's CORS configuration
+          value: '[*]'
         }
         {
           name: 'Kestrel:Endpoints:Https:Url'
           value: 'https://localhost:443'
         }
-        // {
-        //   name: 'Logging:LogLevel:Default'
-        //   value: 'Warning'
-        // }
-        // {
-        //   name: 'Logging:LogLevel:CopilotChat.WebApi'
-        //   value: 'Warning'
-        // }
-        // {
-        //   name: 'Logging:LogLevel:Microsoft.SemanticKernel'
-        //   value: 'Warning'
-        // }
-        // {
-        //   name: 'Logging:LogLevel:Microsoft.AspNetCore.Hosting'
-        //   value: 'Warning'
-        // }
-        // {
-        //   name: 'Logging:LogLevel:Microsoft.Hosting.Lifetimel'
-        //   value: 'Warning'
-        // }
-        // {
-        //   name: 'Logging:ApplicationInsights:LogLevel:Default'
-        //   value: 'Warning'
-        // }
+        {
+          name: 'Logging:LogLevel:Default'
+          value: 'Warning'
+        }
+        {
+          name: 'Logging:LogLevel:CopilotChat.WebApi'
+          value: 'Warning'
+        }
+        {
+          name: 'Logging:LogLevel:Microsoft.SemanticKernel'
+          value: 'Warning'
+        }
+        {
+          name: 'Logging:LogLevel:Microsoft.AspNetCore.Hosting'
+          value: 'Warning'
+        }
+        {
+          name: 'Logging:LogLevel:Microsoft.Hosting.Lifetimel'
+          value: 'Warning'
+        }
+        {
+          name: 'Logging:ApplicationInsights:LogLevel:Default'
+          value: 'Warning'
+        }
         {
           name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
           value: appInsightsConnectionString
@@ -332,5 +331,5 @@ resource webSubnetConnection 'Microsoft.Web/sites/virtualNetworkConnections@2022
   }
 }
 
-output weburl string = 'https://${appServiceWeb.properties.defaultHostName}'
-output webname string = appServiceWeb.name
+output url string = 'https://${appServiceWeb.properties.defaultHostName}'
+output name string = appServiceWeb.name

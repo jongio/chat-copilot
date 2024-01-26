@@ -498,3 +498,9 @@ tmp/*
 # Custom plugins in default directories
 */Skills/NativePlugins
 */Skills/SemanticPlugins
+
+# AZD
+.azure
+webapp/package-lock.json
+webapp/yarn.lock
+plugins/web-searcher/WebSearcher.csproj

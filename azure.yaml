@@ -21,6 +21,18 @@ services:
           run: node entrypoint.cjs -o ./build/env-config.js
           continueOnError: false
           interactive: true
+      postdeploy:
+        windows:
+          shell: pwsh
+          run: |
+            if ($env:FRONTEND_CLIENTID -ne '') {
+              $objectId = (az ad app show --id $env:FRONTEND_CLIENTID | ConvertFrom-Json).id
+              $redirectUris = (az rest --method GET --uri "https://graph.microsoft.com/v1.0/applications/$objectId" --headers 'Content-Type=application/json' | ConvertFrom-Json).spa.redirectUris
+              $body = "{spa:{redirectUris:["
+              foreach ($uri in $redirectUris) { $body += "'$uri',"}
+              $body += ("'$env:REACT_APP_WEB_BASE_URL'" + "]}}")
+              az rest --method PATCH --uri "https://graph.microsoft.com/v1.0/applications/$objectId" --headers 'Content-Type=application/json' --body $body
+            }
   api:
     project: ./webapi
     language: dotnet
@@ -33,5 +45,9 @@ services:
     project: ./memorypipeline
     language: dotnet
     host: appservice
+hooks:
+  prepackage:
+    shell: pwsh
+    run: npm config set legacy-peer-deps true
 
 
