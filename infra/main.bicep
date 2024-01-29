@@ -18,9 +18,6 @@ param chatGptDeploymentName string = 'gpt-35-turbo'
 param chatGptDeploymentCapacity int = 30
 param chatGptModelName string = 'gpt-35-turbo'
 param chatGptModelVersion string = '0613'
-
-@allowed([ 'B1', 'S1', 'S2', 'S3', 'P1V3', 'P2V3', 'I1V2', 'I2V2' ])
-param webAppServiceSku string = 'B1'
 param webAppName string = ''
 param appServicePlanName string = ''
 param applicationInsightsName string = ''
@@ -35,21 +32,34 @@ param appServiceQdrantName string = ''
 param storageFileShareName string = 'aciqdrantshare'
 param cosmosDbAccountName string = ''
 param speechName string = ''
+param azureAdTenantId string = ''
+param frontendClientId string = ''
+param webApiClientId string = ''
+
+@description('Location of the websearcher plugin to deploy')
+#disable-next-line no-hardcoded-env-urls
+param webSearcherPackageUri string = 'https://aka.ms/copilotchat/websearcher/latest'
+
+@allowed([ 'B1', 'S1', 'S2', 'S3', 'P1V3', 'P2V3', 'I1V2', 'I2V2' ])
+param webAppServiceSku string = 'B1'
+
 @allowed([
   'AzureCognitiveSearch'
   'Qdrant'
 ])
 param memoryStore string = 'AzureCognitiveSearch'
+
 @description('Whether to deploy the web searcher plugin, which requires a Bing resource')
 param deployWebSearcherPlugin bool = false
+
+@description('Whether to deploy pre-built binary packages to the cloud')
+param deployWebSearcherPackages bool = false
+
 @description('Whether to deploy Cosmos DB for persistent chat storage')
 param deployCosmosDB bool = false
+
 @description('Whether to deploy Azure Speech Services to enable input by voice')
 param deploySpeechServices bool = false
-param ocrAccountName string = ''
-param azureAdTenantId string = ''
-param frontendClientId string = ''
-param webApiClientId string = ''
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
@@ -203,6 +213,8 @@ module functionAppWebSearcherPlugin './app/searcherplugin.bicep' = if (deployWeb
     appInsightsInstrumentationKey: applicationInsights.outputs.instrumentationKey
     appServicePlanId: appServicePlan.outputs.id
     strorageAccount: storage.outputs.name
+    deployPackages: deployWebSearcherPackages
+    webSearcherPackageUri: webSearcherPackageUri
   }
 }
 
@@ -223,29 +235,13 @@ module appServiceMemoryPipeline 'app/memorypipeline.bicep' = {
     tags: union(tags, { 'azd-service-name': 'memorypipeline' }, { skweb: '1' })
     appServicePlanId: appServicePlan.outputs.id
     memoryStore: memoryStore
-    virtualNetworkSubnetId: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
+    virtualNetworkId0: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
     appInsightsConnectionString: applicationInsights.outputs.connectionString
-    AzureCognitiveSearch: memoryStore == 'Qdrant' ? '' : azureCognitiveSearch.outputs.name
+    azureCognitiveSearch: memoryStore == 'Qdrant' ? '' : azureCognitiveSearch.outputs.name
     openAIEndpoint: openAI.outputs.name
     openAIServiceName: openAI.outputs.name
-    storageAccountName: storage.outputs.name
+    strorageAccount: storage.outputs.name
     appServiceQdrantDefaultHostName: memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
-    AzureCognitiveSearchName: memoryStore == 'AzureCognitiveSearch' ? azureCognitiveSearch.outputs.name : ''
-    ocrAccountEndpoint: ocrAccount.outputs.endpoint
-    ocrAccountName: ocrAccount.outputs.name
-  }
-}
-
-module ocrAccount 'core/ai/cognitiveservices.bicep' = {
-  scope: rg
-  name: 'ocraccount'
-  params: {
-    name: !empty(ocrAccountName) ? ocrAccountName : 'cog-ocr-${abbrs.searchSearchServices}${resourceToken}'
-    location: location
-    sku: {
-      name: 'S0'
-    }
-    kind: 'FormRecognizer'
   }
 }
 
@@ -296,9 +292,20 @@ module speechAccount 'app/speech.bicep' = if (deploySpeechServices) {
 
 output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
+output APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
+output AZURE_STORAGE_NAME string = storage.outputs.name
 output REACT_APP_BACKEND_URI string = api.outputs.url
 output REACT_APP_APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
 output REACT_APP_WEB_BASE_URL string = web.outputs.uri
+output AZURE_AD_TENANT_ID string = azureAdTenantId
+output AZURE_BACKEND_APPLICATION_ID string = webApiClientId
+output AZURE_FRONTEND_APPLICATION_ID string = frontendClientId
+output WEB_SEARCHER_PACKAGE_URL string = webSearcherPackageUri
+output DEPLOY_WEB_SEARCHER_PLUGIN bool = deployWebSearcherPlugin
+output DEPLOY_WEB_SEARCHER_PACKAGES bool = deployWebSearcherPackages
+output DEPLOY_COSMOSDB bool = deployCosmosDB
+output DEPLOY_SPEECH_SERVICES bool = deploySpeechServices
+output MEMORY_STORE string = memoryStore
 output AZURE_PLUGIN_NAME array = concat(
   [],
   (deployWebSearcherPlugin) ? [ functionAppWebSearcherPlugin.outputs.name ] : []

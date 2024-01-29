@@ -9,43 +9,36 @@ param aiService string = 'AzureOpenAI'
 param completionModel string = 'gpt-35-turbo'
 param embeddingModel string = 'text-embedding-ada-002'
 param plannerModel string = 'gpt-35-turbo'
-
 param memoryStore string
 param appServicePlanId string
 param appInsightsConnectionString string
 param azureCognitiveSearch string
 param deployWebSearcherPlugin bool
 param allowedOrigins array = []
-
 param functionAppWebSearcherPlugin string
 param searcherPluginDefaultHostName string
-var functionAppWebSearcherPluginId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.Web/sites', functionAppWebSearcherPlugin)
-
 param openAIServiceName string
 param openAIEndpoint string
-var openAIId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.CognitiveServices/accounts', openAIServiceName)
-
 param strorageAccount string
-var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.Storage/storageAccounts', strorageAccount)
-
 param virtualNetworkId0 string
 param appServiceQdrantDefaultHost string
-
 param cosmosConnectString string
 param deployCosmosDB bool
-
 param deploySpeechServices bool
 param speechAccount string
-var speechAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.CognitiveServices/accounts', speechAccount)
-
 param webApiClientId string
 param frontendClientId string
 param azureAdTenantId string
 param azureAdInstance string = environment().authentication.loginEndpoint
+
+var functionAppWebSearcherPluginId = resourceId(subscription().subscriptionId, resourceGroup().name,
+  'Microsoft.Web/sites', functionAppWebSearcherPlugin)
+var openAIId = resourceId(subscription().subscriptionId, resourceGroup().name,
+  'Microsoft.CognitiveServices/accounts', openAIServiceName)
+var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
+  'Microsoft.Storage/storageAccounts', strorageAccount)
+var speechAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
+  'Microsoft.CognitiveServices/accounts', speechAccount)
 
 resource appServiceWeb 'Microsoft.Web/sites@2022-09-01' = {
   name: name
@@ -100,10 +93,6 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
           value: 'access_as_user'
         }
         {
-          name: 'Frontend:AadClientId'
-          value: frontendClientId
-        }
-        {
           name: 'Planner:Model'
           value: plannerModel
         }
@@ -133,7 +122,7 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'ChatStore:Cosmos:ConnectionString'
-          value: cosmosConnectString
+          value: deployCosmosDB ? cosmosConnectString : ''
         }
         {
           name: 'AzureSpeech:Region'
@@ -150,6 +139,10 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         {
           name: 'Kestrel:Endpoints:Https:Url'
           value: 'https://localhost:443'
+        }
+        {
+          name: 'Frontend:AadClientId'
+          value: frontendClientId
         }
         {
           name: 'Logging:LogLevel:Default'
@@ -261,7 +254,7 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'KernelMemory:Services:AzureOpenAIText:APIKey'
-          value: listKeys(openAIId, '2023-05-01').key1
+          value: listkeys(openAIId, '2023-05-01').key1
         }
         {
           name: 'KernelMemory:Services:AzureOpenAIText:Deployment'
@@ -277,23 +270,11 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'KernelMemory:Services:AzureOpenAIEmbedding:APIKey'
-          value: listKeys(openAIId, '2023-05-01').key1
+          value: listkeys(openAIId, '2023-05-01').key1
         }
         {
           name: 'KernelMemory:Services:AzureOpenAIEmbedding:Deployment'
           value: embeddingModel
-        }
-        {
-          name: 'KernelMemory:Services:OpenAI:TextModel'
-          value: completionModel
-        }
-        {
-          name: 'KernelMemory:Services:OpenAI:EmbeddingModel'
-          value: embeddingModel
-        }
-        {
-          name: 'KernelMemory:Services:OpenAI:APIKey'
-          value: listKeys(openAIId, '2023-05-01').key1
         }
         {
           name: 'Plugins:0:Name'
@@ -326,7 +307,7 @@ resource webSubnetConnection 'Microsoft.Web/sites/virtualNetworkConnections@2022
   parent: appServiceWeb
   name: 'webSubnetConnection'
   properties: {
-    vnetResourceId: null
+    vnetResourceId: virtualNetworkId0
     isSwift: true
   }
 }

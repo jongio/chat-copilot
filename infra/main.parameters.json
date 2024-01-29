@@ -19,6 +19,21 @@
     },
     "frontendClientId": {
       "value": "${AZURE_FRONTEND_APPLICATION_ID}"
+    },
+    "deployWebSearcherPlugin": {
+      "value": "${DEPLOY_WEB_SEARCHER_PLUGIN}"
+    },
+    "deployWebSearcherPackages": {
+      "value": "${DEPLOY_WEB_SEARCHER_PACKAGES}"
+    },
+    "deployCosmosDB": {
+      "value": "${DEPLOY_COSMOSDB}"
+    },
+    "deploySpeechServices": {
+      "value": "${DEPLOY_SPEECH_SERVICES}"
+    },
+    "memoryStore": {
+      "value": "${MEMORY_STORE}"
     }
   }
 }

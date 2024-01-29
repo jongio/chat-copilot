@@ -20,13 +20,13 @@ services:
           shell: pwsh
           run: node entrypoint.cjs -o ./build/env-config.js
           continueOnError: false
-          interactive: true
+          interactive: false
       postdeploy:
         windows:
           shell: pwsh
           run: |
-            if ($env:FRONTEND_CLIENTID -ne '') {
-              $objectId = (az ad app show --id $env:FRONTEND_CLIENTID | ConvertFrom-Json).id
+            if ($env:AZURE_FRONTEND_APPLICATION_ID -ne '') {
+              $objectId = (az ad app show --id $env:AZURE_FRONTEND_APPLICATION_ID | ConvertFrom-Json).id
               $redirectUris = (az rest --method GET --uri "https://graph.microsoft.com/v1.0/applications/$objectId" --headers 'Content-Type=application/json' | ConvertFrom-Json).spa.redirectUris
               $body = "{spa:{redirectUris:["
               foreach ($uri in $redirectUris) { $body += "'$uri',"}
@@ -37,10 +37,6 @@ services:
     project: ./webapi
     language: dotnet
     host: appservice
-  searcherplugin:
-    project: ./plugins/web-searcher
-    host: appservice
-    language: dotnet
   memorypipeline:
     project: ./memorypipeline
     language: dotnet

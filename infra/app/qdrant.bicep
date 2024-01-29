@@ -1,16 +1,11 @@
 param name string
 param location string = resourceGroup().location
-// @allowed([
-//   'AzureCognitiveSearch'
-//   'Qdrant'
-// ])
-// param memoryStore string
 param appServicePlanQdrantId string
 param virtualNetworkId0 string
 param virtualNetworkId1 string
 param storageFileShareName string
-
 param strorageAccount string
+
 var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.Storage/storageAccounts', strorageAccount)
 
