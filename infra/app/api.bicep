@@ -22,7 +22,6 @@ param openAIEndpoint string
 param strorageAccount string
 param virtualNetworkId0 string
 param appServiceQdrantDefaultHost string
-param cosmosConnectString string
 param deployCosmosDB bool
 param deploySpeechServices bool
 param speechAccount string
@@ -30,6 +29,8 @@ param webApiClientId string
 param frontendClientId string
 param azureAdTenantId string
 param azureAdInstance string = environment().authentication.loginEndpoint
+param cosmosAccountName string
+param cosmosAccountEndpoint string
 
 var functionAppWebSearcherPluginId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.Web/sites', functionAppWebSearcherPlugin)
@@ -39,6 +40,8 @@ var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup(
   'Microsoft.Storage/storageAccounts', strorageAccount)
 var speechAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.CognitiveServices/accounts', speechAccount)
+var cosmosAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
+  'Microsoft.DocumentDB/databaseAccounts', cosmosAccountName)
 
 resource appServiceWeb 'Microsoft.Web/sites@2022-09-01' = {
   name: name
@@ -122,7 +125,7 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'ChatStore:Cosmos:ConnectionString'
-          value: deployCosmosDB ? cosmosConnectString : ''
+          value: deployCosmosDB ? 'AccountEndpoint=${cosmosAccountEndpoint};AccountKey=${listKeys(cosmosAccountId, '2023-04-15').primaryMasterKey}' : ''
         }
         {
           name: 'AzureSpeech:Region'
@@ -254,7 +257,7 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'KernelMemory:Services:AzureOpenAIText:APIKey'
-          value: listkeys(openAIId, '2023-05-01').key1
+          value: listKeys(openAIId, '2023-05-01').key1
         }
         {
           name: 'KernelMemory:Services:AzureOpenAIText:Deployment'
@@ -270,7 +273,7 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'KernelMemory:Services:AzureOpenAIEmbedding:APIKey'
-          value: listkeys(openAIId, '2023-05-01').key1
+          value: listKeys(openAIId, '2023-05-01').key1
         }
         {
           name: 'KernelMemory:Services:AzureOpenAIEmbedding:Deployment'

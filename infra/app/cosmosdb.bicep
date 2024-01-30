@@ -151,4 +151,5 @@ resource memorySourcesContainer 'Microsoft.DocumentDB/databaseAccounts/sqlDataba
   }
 }
 
-output cosmosConnectString string = cosmosAccount.listConnectionStrings().connectionStrings[0].connectionString
+output cosmosEndpoint string = cosmosAccount.properties.documentEndpoint
+output name string = cosmosAccount.name

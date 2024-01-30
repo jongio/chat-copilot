@@ -138,12 +138,13 @@ module api './app/api.bicep' = {
     virtualNetworkId0: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
     appServiceQdrantDefaultHost: memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
     deployCosmosDB: deployCosmosDB
-    cosmosConnectString: deployCosmosDB ? cosmos.outputs.cosmosConnectString : ''
     deploySpeechServices: deploySpeechServices
     speechAccount: deploySpeechServices ? speechAccount.outputs.name : ''
     azureAdTenantId: azureAdTenantId
     frontendClientId: frontendClientId
     webApiClientId: webApiClientId
+    cosmosAccountEndpoint: deployCosmosDB ? cosmos.outputs.cosmosEndpoint : ''
+    cosmosAccountName: deployCosmosDB ? cosmos.outputs.name : ''
   }
 }
 
