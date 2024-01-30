@@ -157,7 +157,7 @@ module web './core/host/staticwebapp.bicep' = {
   }
 }
 
-module storage 'app/storage.bicep' = {
+module storage './app/storage.bicep' = {
   scope: rg
   name: 'storage'
   params: {
@@ -168,7 +168,7 @@ module storage 'app/storage.bicep' = {
   }
 }
 
-module azureCognitiveSearch 'core/search/search-services.bicep' = if (memoryStore == 'AzureCognitiveSearch') {
+module azureCognitiveSearch './core/search/search-services.bicep' = if (memoryStore == 'AzureCognitiveSearch') {
   scope: rg
   name: 'azurecognitivesearch'
   params: {
@@ -182,7 +182,7 @@ module azureCognitiveSearch 'core/search/search-services.bicep' = if (memoryStor
   }
 }
 
-module applicationInsights 'core/monitor/applicationinsights.bicep' = {
+module applicationInsights './core/monitor/applicationinsights.bicep' = {
   name: 'applicatininsight'
   scope: rg
   params: {
@@ -194,7 +194,7 @@ module applicationInsights 'core/monitor/applicationinsights.bicep' = {
   }
 }
 
-module logAnalytics 'core/monitor/loganalytics.bicep' = {
+module logAnalytics './core/monitor/loganalytics.bicep' = {
   name: 'loganalytics'
   scope: rg
   params: {
@@ -218,7 +218,7 @@ module functionAppWebSearcherPlugin './app/searcherplugin.bicep' = if (deployWeb
   }
 }
 
-module virtualNetwork 'app/virtualnetwork.bicep' = if (memoryStore == 'Qdrant') {
+module virtualNetwork './app/virtualnetwork.bicep' = if (memoryStore == 'Qdrant') {
   scope: rg
   name: 'virtualnetwork'
   params: {
@@ -226,7 +226,7 @@ module virtualNetwork 'app/virtualnetwork.bicep' = if (memoryStore == 'Qdrant') 
   }
 }
 
-module appServiceMemoryPipeline 'app/memorypipeline.bicep' = {
+module appServiceMemoryPipeline './app/memorypipeline.bicep' = {
   scope: rg
   name: 'appservicememorypipeline'
   params: {
@@ -238,14 +238,14 @@ module appServiceMemoryPipeline 'app/memorypipeline.bicep' = {
     virtualNetworkId0: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
     appInsightsConnectionString: applicationInsights.outputs.connectionString
     azureCognitiveSearch: memoryStore == 'Qdrant' ? '' : azureCognitiveSearch.outputs.name
-    openAIEndpoint: openAI.outputs.name
+    openAIEndpoint: openAI.outputs.endpoint
     openAIServiceName: openAI.outputs.name
     strorageAccount: storage.outputs.name
     appServiceQdrantDefaultHostName: memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
   }
 }
 
-module appServicePlanQdrant 'core/host/appserviceplan.bicep' = if (memoryStore == 'Qdrant') {
+module appServicePlanQdrant './core/host/appserviceplan.bicep' = if (memoryStore == 'Qdrant') {
   scope: rg
   name: 'asp-qdrant'
   params: {
@@ -258,7 +258,7 @@ module appServicePlanQdrant 'core/host/appserviceplan.bicep' = if (memoryStore =
   }
 }
 
-module appServiceQdrant 'app/qdrant.bicep' = if (memoryStore == 'Qdrant') {
+module appServiceQdrant './app/qdrant.bicep' = if (memoryStore == 'Qdrant') {
   scope: rg
   name: 'appserviceqdrant'
   params: {
@@ -272,7 +272,7 @@ module appServiceQdrant 'app/qdrant.bicep' = if (memoryStore == 'Qdrant') {
   }
 }
 
-module cosmos 'app/cosmosdb.bicep' = if (deployCosmosDB) {
+module cosmos './app/cosmosdb.bicep' = if (deployCosmosDB) {
   scope: rg
   name: 'cosmosdb'
   params: {
@@ -281,7 +281,7 @@ module cosmos 'app/cosmosdb.bicep' = if (deployCosmosDB) {
   }
 }
 
-module speechAccount 'app/speech.bicep' = if (deploySpeechServices) {
+module speechAccount './app/speech.bicep' = if (deploySpeechServices) {
   scope: rg
   name: 'speech'
   params: {

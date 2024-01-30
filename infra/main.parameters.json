@@ -21,19 +21,19 @@
       "value": "${AZURE_FRONTEND_APPLICATION_ID}"
     },
     "deployWebSearcherPlugin": {
-      "value": "${DEPLOY_WEB_SEARCHER_PLUGIN}"
+      "value": "${DEPLOY_WEB_SEARCHER_PLUGIN=false}"
     },
     "deployWebSearcherPackages": {
-      "value": "${DEPLOY_WEB_SEARCHER_PACKAGES}"
+      "value": "${DEPLOY_WEB_SEARCHER_PACKAGES=false}"
     },
     "deployCosmosDB": {
-      "value": "${DEPLOY_COSMOSDB}"
+      "value": "${DEPLOY_COSMOSDB=false}"
     },
     "deploySpeechServices": {
-      "value": "${DEPLOY_SPEECH_SERVICES}"
+      "value": "${DEPLOY_SPEECH_SERVICES=false}"
     },
     "memoryStore": {
-      "value": "${MEMORY_STORE}"
+      "value": "${MEMORY_STORE=AzureCognitiveSearch}"
     }
   }
 }
