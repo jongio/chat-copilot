@@ -2,10 +2,9 @@ param name string
 param location string = resourceGroup().location
 param tags object = {}
 param appServicePlanId string
-param appInsightsInstrumentationKey string
+param applicationInsightsConnectionString string
 param strorageAccount string
 param webSearcherPackageUri string
-param deployPackages bool
 
 var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.Storage/storageAccounts', strorageAccount)
@@ -25,8 +24,8 @@ resource functionAppWebSearcherPlugin 'Microsoft.Web/sites@2022-09-01' = {
 }
 
 resource functionAppWebSearcherPluginConfig 'Microsoft.Web/sites/config@2022-09-01' = {
-  parent: functionAppWebSearcherPlugin
   name: 'web'
+  parent: functionAppWebSearcherPlugin
   properties: {
     minTlsVersion: '1.2'
     appSettings: [
@@ -43,8 +42,8 @@ resource functionAppWebSearcherPluginConfig 'Microsoft.Web/sites/config@2022-09-
         value: 'DefaultEndpointsProtocol=https;AccountName=${strorageAccount};AccountKey=${listKeys(strorageAccountId, '2019-06-01').keys[1].value}'
       }
       {
-        name: 'APPINSIGHTS_INSTRUMENTATIONKEY'
-        value: appInsightsInstrumentationKey
+        name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'
+        value: applicationInsightsConnectionString
       }
       {
         name: 'PluginConfig:BingApiKey'
@@ -54,6 +53,18 @@ resource functionAppWebSearcherPluginConfig 'Microsoft.Web/sites/config@2022-09-
   }
 }
 
+resource functionAppWebSearcherDeploy 'Microsoft.Web/sites/extensions@2022-09-01' = {
+  name: 'MSDeploy'
+  parent: functionAppWebSearcherPlugin
+  kind: 'string'
+  properties: {
+    packageUri: webSearcherPackageUri
+  }
+  dependsOn: [
+    functionAppWebSearcherPluginConfig
+  ]
+}
+
 resource bingSearchService 'Microsoft.Bing/accounts@2020-06-10' = {
   name: 'bingsearch'
   location: 'global'
@@ -61,18 +72,6 @@ resource bingSearchService 'Microsoft.Bing/accounts@2020-06-10' = {
     name: 'S1'
   }
   kind: 'Bing.Search.v7'
-}
-
-resource functionAppWebSearcherDeploy 'Microsoft.Web/sites/extensions@2022-09-01' = if (deployPackages) {
-  name: 'MSDeploy'
-  kind: 'string'
-  parent: functionAppWebSearcherPlugin
-  properties: {
-    packageUri: webSearcherPackageUri
-  }
-  dependsOn: [
-    functionAppWebSearcherPluginConfig
-  ]
 }
 
 output defaulthost string = functionAppWebSearcherPlugin.properties.defaultHostName

@@ -1,7 +1,7 @@
 param name string = 'virtualnetwork'
 param location string = resourceGroup().location
 
-resource virtualNetwork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
+resource virtualNetWork 'Microsoft.Network/virtualNetworks@2021-05-01' = {
   name: name
   location: location
   properties: {
@@ -99,5 +99,5 @@ resource qdrantNsg 'Microsoft.Network/networkSecurityGroups@2022-11-01' = {
   }
 }
 
-output id0 string = virtualNetwork.properties.subnets[0].id
-output id1 string = virtualNetwork.properties.subnets[1].id
+output id0 string = virtualNetWork.properties.subnets[0].id
+output id1 string = virtualNetWork.properties.subnets[1].id

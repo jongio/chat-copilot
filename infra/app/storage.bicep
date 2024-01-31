@@ -1,9 +1,5 @@
 param name string
 param location string = resourceGroup().location
-@allowed([
-  'AzureCognitiveSearch'
-  'Qdrant'
-])
 param memoryStore string
 param storageFileShareName string
 

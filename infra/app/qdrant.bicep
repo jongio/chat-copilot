@@ -4,10 +4,10 @@ param appServicePlanQdrantId string
 param virtualNetworkId0 string
 param virtualNetworkId1 string
 param storageFileShareName string
-param strorageAccount string
+param strorageAccountName string
 
 var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.Storage/storageAccounts', strorageAccount)
+  'Microsoft.Storage/storageAccounts', strorageAccountName)
 
 resource appServiceQdrant 'Microsoft.Web/sites@2022-09-01' = {
   name: name
@@ -41,7 +41,7 @@ resource appServiceQdrant 'Microsoft.Web/sites@2022-09-01' = {
       azureStorageAccounts: {
         aciqdrantshare: {
           type: 'AzureFiles'
-          accountName: strorageAccount
+          accountName: strorageAccountName
           shareName: storageFileShareName
           mountPath: '/qdrant/storage'
           accessKey: listKeys(strorageAccountId, '2019-06-01').keys[0].value
@@ -52,8 +52,8 @@ resource appServiceQdrant 'Microsoft.Web/sites@2022-09-01' = {
 }
 
 resource qdrantSubnetConnection 'Microsoft.Web/sites/virtualNetworkConnections@2022-09-01' = {
-  parent: appServiceQdrant
   name: 'qdrantSubnetConnection'
+  parent: appServiceQdrant
   properties: {
     vnetResourceId: virtualNetworkId1
     isSwift: true

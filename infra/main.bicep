@@ -5,6 +5,9 @@ targetScope = 'subscription'
 @description('Name of the the environment which is used to generate a short unique hash used in all resources.')
 param environmentName string
 
+@description('Id of the user or app to assign application roles')
+param principalId string = ''
+
 @minLength(1)
 @description('Primary location for all resources')
 param location string
@@ -21,12 +24,11 @@ param chatGptModelVersion string = '0613'
 param webAppName string = ''
 param appServicePlanName string = ''
 param applicationInsightsName string = ''
-param dashboardName string = ''
 param logAnalyticsName string = ''
 param webApiName string = ''
 param storageAccountName string = ''
 param azureCognitiveSearchName string = ''
-param functionAppWeb string = ''
+param functionAppWebName string = ''
 param appServiceMemoryPipelineName string = ''
 param appServiceQdrantName string = ''
 param storageFileShareName string = 'aciqdrantshare'
@@ -35,6 +37,31 @@ param speechName string = ''
 param azureAdTenantId string = ''
 param frontendClientId string = ''
 param webApiClientId string = ''
+param keyVaultName string = ''
+param databaseName string = 'CopilotChat'
+param containers array = [
+  {
+    name: 'chatmessages'
+    id: 'chatmessages'
+    partitionKey: '/chatId'
+  }
+  {
+    name: 'chatsessions'
+    id: 'chatsessions'
+    partitionKey: '/id'
+  }
+  {
+    name: 'chatparticipants'
+    id: 'chatparticipants'
+    partitionKey: '/userId'
+  }
+  {
+    name: 'chatmemorysources'
+    id: 'chatmemorysources'
+    partitionKey: '/chatId'
+  }
+]
+param ocrAccountName string = ''
 
 @description('Location of the websearcher plugin to deploy')
 #disable-next-line no-hardcoded-env-urls
@@ -52,14 +79,11 @@ param memoryStore string = 'AzureCognitiveSearch'
 @description('Whether to deploy the web searcher plugin, which requires a Bing resource')
 param deployWebSearcherPlugin bool = false
 
-@description('Whether to deploy pre-built binary packages to the cloud')
-param deployWebSearcherPackages bool = false
-
 @description('Whether to deploy Cosmos DB for persistent chat storage')
 param deployCosmosDB bool = false
 
 @description('Whether to deploy Azure Speech Services to enable input by voice')
-param deploySpeechServices bool = false
+param deploySpeechServices bool = true
 
 var abbrs = loadJsonContent('./abbreviations.json')
 var resourceToken = toLower(uniqueString(subscription().id, environmentName, location))
@@ -104,7 +128,7 @@ module openAI './core/ai/cognitiveservices.bicep' = {
 }
 
 module appServicePlan './core/host/appserviceplan.bicep' = {
-  name: 'asp-webapi'
+  name: 'appserviceplan'
   scope: rg
   params: {
     location: location
@@ -126,10 +150,10 @@ module api './app/api.bicep' = {
     tags: union(tags, { 'azd-service-name': 'api' }, { skweb: '1' })
     appInsightsConnectionString: applicationInsights.outputs.connectionString
     appServicePlanId: appServicePlan.outputs.id
-    azureCognitiveSearch: memoryStore == 'AzureCognitiveSearch' ? azureCognitiveSearch.outputs.name : ''
+    azureCognitiveSearchName: memoryStore == 'AzureCognitiveSearch' ? azureCognitiveSearch.outputs.name : ''
     openAIEndpoint: openAI.outputs.endpoint
     openAIServiceName: openAI.outputs.name
-    strorageAccount: storage.outputs.name
+    storageAccountName: storage.outputs.name
     deployWebSearcherPlugin: deployWebSearcherPlugin
     functionAppWebSearcherPlugin: deployWebSearcherPlugin ? functionAppWebSearcherPlugin.outputs.name : ''
     searcherPluginDefaultHostName: deployWebSearcherPlugin ? functionAppWebSearcherPlugin.outputs.defaulthost : ''
@@ -143,7 +167,7 @@ module api './app/api.bicep' = {
     azureAdTenantId: azureAdTenantId
     frontendClientId: frontendClientId
     webApiClientId: webApiClientId
-    cosmosAccountEndpoint: deployCosmosDB ? cosmos.outputs.cosmosEndpoint : ''
+    cosmosAccountEndpoint: deployCosmosDB ? cosmos.outputs.endpoint : ''
     cosmosAccountName: deployCosmosDB ? cosmos.outputs.name : ''
   }
 }
@@ -187,11 +211,10 @@ module applicationInsights './core/monitor/applicationinsights.bicep' = {
   name: 'applicatininsight'
   scope: rg
   params: {
-    dashboardName: dashboardName
     logAnalyticsWorkspaceId: logAnalytics.outputs.id
     name: !empty(applicationInsightsName) ? applicationInsightsName : '${abbrs.insightsComponents}${resourceToken}'
     location: location
-    includeDashboard: false
+    tags: tags
   }
 }
 
@@ -208,13 +231,12 @@ module functionAppWebSearcherPlugin './app/searcherplugin.bicep' = if (deployWeb
   scope: rg
   name: 'searcherplugin'
   params: {
-    name: !empty(functionAppWeb) ? functionAppWeb : '${abbrs.webSitesFunctions}${resourceToken}'
+    name: !empty(functionAppWebName) ? functionAppWebName : '${abbrs.webSitesFunctions}${resourceToken}'
     location: location
     tags: union(tags, { 'azd-service-name': 'searcherplugin' }, { skweb: '1' })
-    appInsightsInstrumentationKey: applicationInsights.outputs.instrumentationKey
+    applicationInsightsConnectionString: applicationInsights.outputs.instrumentationKey
     appServicePlanId: appServicePlan.outputs.id
     strorageAccount: storage.outputs.name
-    deployPackages: deployWebSearcherPackages
     webSearcherPackageUri: webSearcherPackageUri
   }
 }
@@ -241,8 +263,10 @@ module appServiceMemoryPipeline './app/memorypipeline.bicep' = {
     azureCognitiveSearch: memoryStore == 'Qdrant' ? '' : azureCognitiveSearch.outputs.name
     openAIEndpoint: openAI.outputs.endpoint
     openAIServiceName: openAI.outputs.name
-    strorageAccount: storage.outputs.name
+    storageAccountName: storage.outputs.name
     appServiceQdrantDefaultHostName: memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
+    ocrAccountEndpoint: ocrAccount.outputs.endpoint
+    ocrAccountName: ocrAccount.outputs.name
   }
 }
 
@@ -267,27 +291,64 @@ module appServiceQdrant './app/qdrant.bicep' = if (memoryStore == 'Qdrant') {
     appServicePlanQdrantId: memoryStore == 'Qdrant' ? appServicePlanQdrant.outputs.id : ''
     name: !empty(appServiceQdrantName) ? appServiceQdrantName : '${abbrs.webSitesAppService}qdrant-${resourceToken}'
     storageFileShareName: storageFileShareName
-    strorageAccount: storage.outputs.name
+    strorageAccountName: storage.outputs.name
     virtualNetworkId0: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
     virtualNetworkId1: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id1 : ''
   }
 }
 
-module cosmos './app/cosmosdb.bicep' = if (deployCosmosDB) {
+module cosmos './core/database/cosmos/sql/cosmos-sql-account.bicep' = if (deployCosmosDB) {
+  scope: rg
+  name: 'cosmos'
+  params: {
+    name: !empty(cosmosDbAccountName) ? cosmosDbAccountName : 'cosmos-${resourceToken}'
+    location: location
+    keyVaultName: deployCosmosDB ? keyVault.outputs.name : ''
+  }
+}
+
+module cosmosDB './core/database/cosmos/sql/cosmos-sql-db.bicep' = if (deployCosmosDB) {
   scope: rg
   name: 'cosmosdb'
   params: {
     location: location
-    name: !empty(cosmosDbAccountName) ? cosmosDbAccountName : 'cosmos-${resourceToken}'
+    accountName: deployCosmosDB ? cosmos.outputs.name : ''
+    databaseName: databaseName
+    keyVaultName: deployCosmosDB ? keyVault.outputs.name : ''
+    containers: containers
   }
 }
 
-module speechAccount './app/speech.bicep' = if (deploySpeechServices) {
+module keyVault './core/security/keyvault.bicep' = if (deployCosmosDB) {
   scope: rg
-  name: 'speech'
+  name: 'keyvalut'
   params: {
     location: location
+    name: !empty(keyVaultName) ? keyVaultName : '${abbrs.keyVaultVaults}${resourceToken}'
+    principalId: principalId
+  }
+}
+
+module speechAccount './core/ai/cognitiveservices.bicep' = {
+  name: 'speechaccount'
+  scope: rg
+  params: {
     name: !empty(speechName) ? speechName : 'speech-${resourceToken}'
+    location: location
+    sku: {
+      name: 'S0'
+    }
+    kind: 'SpeechServices'
+  }
+}
+
+module ocrAccount './core/ai/cognitiveservices.bicep' = {
+  scope: rg
+  name: 'ocraccount'
+  params: {
+    name: !empty(ocrAccountName) ? ocrAccountName : 'ocr-${resourceToken}'
+    location: location
+    kind: 'FormRecognizer'
   }
 }
 
@@ -303,7 +364,6 @@ output AZURE_BACKEND_APPLICATION_ID string = webApiClientId
 output AZURE_FRONTEND_APPLICATION_ID string = frontendClientId
 output WEB_SEARCHER_PACKAGE_URL string = webSearcherPackageUri
 output DEPLOY_WEB_SEARCHER_PLUGIN bool = deployWebSearcherPlugin
-output DEPLOY_WEB_SEARCHER_PACKAGES bool = deployWebSearcherPackages
 output DEPLOY_COSMOSDB bool = deployCosmosDB
 output DEPLOY_SPEECH_SERVICES bool = deploySpeechServices
 output MEMORY_STORE string = memoryStore

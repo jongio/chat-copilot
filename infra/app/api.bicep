@@ -12,14 +12,14 @@ param plannerModel string = 'gpt-35-turbo'
 param memoryStore string
 param appServicePlanId string
 param appInsightsConnectionString string
-param azureCognitiveSearch string
+param azureCognitiveSearchName string
 param deployWebSearcherPlugin bool
 param allowedOrigins array = []
 param functionAppWebSearcherPlugin string
 param searcherPluginDefaultHostName string
 param openAIServiceName string
 param openAIEndpoint string
-param strorageAccount string
+param storageAccountName string
 param virtualNetworkId0 string
 param appServiceQdrantDefaultHost string
 param deployCosmosDB bool
@@ -36,14 +36,14 @@ var functionAppWebSearcherPluginId = resourceId(subscription().subscriptionId, r
   'Microsoft.Web/sites', functionAppWebSearcherPlugin)
 var openAIId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.CognitiveServices/accounts', openAIServiceName)
-var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.Storage/storageAccounts', strorageAccount)
+var storageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
+  'Microsoft.Storage/storageAccounts', storageAccountName)
 var speechAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.CognitiveServices/accounts', speechAccount)
 var cosmosAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.DocumentDB/databaseAccounts', cosmosAccountName)
 
-resource appServiceWeb 'Microsoft.Web/sites@2022-09-01' = {
+resource apiService 'Microsoft.Web/sites@2022-09-01' = {
   name: name
   location: location
   kind: 'app'
@@ -60,12 +60,18 @@ resource appServiceWeb 'Microsoft.Web/sites@2022-09-01' = {
   }
 }
 
+resource webSubnetConnection 'Microsoft.Web/sites/virtualNetworkConnections@2022-09-01' = if (memoryStore == 'Qdrant') {
+  name: 'webSubnetConnection'
+  parent: apiService
+  properties: {
+    vnetResourceId: virtualNetworkId0
+    isSwift: true
+  }
+}
+
 resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
-  parent: appServiceWeb
   name: 'web'
-  dependsOn: [
-    webSubnetConnection
-  ]
+  parent: apiService
   properties: {
     alwaysOn: true
     detailedErrorLoggingEnabled: true
@@ -217,7 +223,7 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'KernelMemory:Services:AzureBlobs:ConnectionString'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${strorageAccount};AccountKey=${listKeys(strorageAccountId, '2019-06-01').keys[1].value}'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountId, '2019-06-01').keys[1].value}'
         }
         {
           name: 'KernelMemory:Services:AzureBlobs:Container'
@@ -229,7 +235,7 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'KernelMemory:Services:AzureQueue:ConnectionString'
-          value: 'DefaultEndpointsProtocol=https;AccountName=${strorageAccount};AccountKey=${listKeys(strorageAccountId, '2019-06-01').keys[1].value}'
+          value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountId, '2019-06-01').keys[1].value}'
         }
         {
           name: 'KernelMemory:Services:AzureCognitiveSearch:Auth'
@@ -237,11 +243,11 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
         }
         {
           name: 'KernelMemory:Services:AzureCognitiveSearch:Endpoint'
-          value: memoryStore == 'AzureCognitiveSearch' ? 'https://${azureCognitiveSearch}.search.windows.net' : ''
+          value: memoryStore == 'AzureCognitiveSearch' ? 'https://${azureCognitiveSearchName}.search.windows.net' : ''
         }
         {
           name: 'KernelMemory:Services:AzureCognitiveSearch:APIKey'
-          value: memoryStore == 'AzureCognitiveSearch' ? listAdminKeys('Microsoft.Search/searchServices/${azureCognitiveSearch}', '2021-04-01-preview').primaryKey : ''
+          value: memoryStore == 'AzureCognitiveSearch' ? listAdminKeys('Microsoft.Search/searchServices/${azureCognitiveSearchName}', '2021-04-01-preview').primaryKey : ''
         }
         {
           name: 'KernelMemory:Services:Qdrant:Endpoint'
@@ -304,16 +310,10 @@ resource appServiceWebConfig 'Microsoft.Web/sites/config@2022-09-01' = {
       ] : []
     )
   }
+  dependsOn: [
+    webSubnetConnection
+  ]
 }
 
-resource webSubnetConnection 'Microsoft.Web/sites/virtualNetworkConnections@2022-09-01' = if (memoryStore == 'Qdrant') {
-  parent: appServiceWeb
-  name: 'webSubnetConnection'
-  properties: {
-    vnetResourceId: virtualNetworkId0
-    isSwift: true
-  }
-}
-
-output url string = 'https://${appServiceWeb.properties.defaultHostName}'
-output name string = appServiceWeb.name
+output url string = 'https://${apiService.properties.defaultHostName}'
+output name string = apiService.name

@@ -11,11 +11,6 @@ services:
     host: staticwebapp
     hooks:
       predeploy:
-        posix:
-          shell: sh
-          run: node entrypoint.cjs -o ./build/env-config.js
-          continueOnError: false
-          interactive: true
         windows:
           shell: pwsh
           run: node entrypoint.cjs -o ./build/env-config.js
@@ -39,8 +34,8 @@ services:
     host: appservice
   memorypipeline:
     project: ./memorypipeline
-    language: dotnet
     host: appservice
+    language: dotnet
 hooks:
   prepackage:
     shell: pwsh

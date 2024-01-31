@@ -10,14 +10,18 @@ param appInsightsConnectionString string
 param azureCognitiveSearch string
 param openAIServiceName string
 param openAIEndpoint string
-param strorageAccount string
+param storageAccountName string
 param virtualNetworkId0 string
 param appServiceQdrantDefaultHostName string
+param ocrAccountEndpoint string
+param ocrAccountName string
 
 var openAIId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.CognitiveServices/accounts', openAIServiceName)
-var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.Storage/storageAccounts', strorageAccount)
+var storageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
+  'Microsoft.Storage/storageAccounts', storageAccountName)
+var ocrAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
+  'Microsoft.CognitiveServices/accounts', ocrAccountName)
 
 resource appServiceMemoryPipeline 'Microsoft.Web/sites@2022-09-01' = {
   name: name
@@ -34,10 +38,10 @@ resource appServiceMemoryPipeline 'Microsoft.Web/sites@2022-09-01' = {
 }
 
 resource appServiceMemoryPipelineConfig 'Microsoft.Web/sites/config@2022-09-01' = {
-  parent: appServiceMemoryPipeline
   name: 'web'
+  parent: appServiceMemoryPipeline
   properties: {
-    alwaysOn: false
+    alwaysOn: true
     detailedErrorLoggingEnabled: true
     minTlsVersion: '1.2'
     netFrameworkVersion: 'v7.0'
@@ -86,7 +90,7 @@ resource appServiceMemoryPipelineConfig 'Microsoft.Web/sites/config@2022-09-01' 
       }
       {
         name: 'KernelMemory:Services:AzureBlobs:ConnectionString'
-        value: 'DefaultEndpointsProtocol=https;AccountName=${strorageAccount};AccountKey=${listKeys(strorageAccountId, '2019-06-01').keys[1].value}'
+        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountId, '2019-06-01').keys[1].value}'
       }
       {
         name: 'KernelMemory:Services:AzureBlobs:Container'
@@ -98,7 +102,7 @@ resource appServiceMemoryPipelineConfig 'Microsoft.Web/sites/config@2022-09-01' 
       }
       {
         name: 'KernelMemory:Services:AzureQueue:ConnectionString'
-        value: 'DefaultEndpointsProtocol=https;AccountName=${strorageAccount};AccountKey=${listKeys(strorageAccountId, '2019-06-01').keys[1].value}'
+        value: 'DefaultEndpointsProtocol=https;AccountName=${storageAccountName};AccountKey=${listKeys(storageAccountId, '2019-06-01').keys[1].value}'
       }
       {
         name: 'KernelMemory:Services:AzureCognitiveSearch:Auth'
@@ -154,11 +158,11 @@ resource appServiceMemoryPipelineConfig 'Microsoft.Web/sites/config@2022-09-01' 
       }
       {
         name: 'KernelMemory:Services:AzureFormRecognizer:Endpoint'
-        value: ocrAccount.properties.endpoint
+        value: ocrAccountEndpoint
       }
       {
         name: 'KernelMemory:Services:AzureFormRecognizer:APIKey'
-        value: ocrAccount.listKeys().key1
+        value: listKeys(ocrAccountId, '2023-05-01').key1
       }
       {
         name: 'KernelMemory:Services:OpenAI:TextModel'
@@ -190,33 +194,17 @@ resource appServiceMemoryPipelineConfig 'Microsoft.Web/sites/config@2022-09-01' 
       }
     ])
   }
+  dependsOn: [
+    memSubnetConnection
+  ]
 }
 
 resource memSubnetConnection 'Microsoft.Web/sites/virtualNetworkConnections@2022-09-01' = if (memoryStore == 'Qdrant') {
-  parent: appServiceMemoryPipeline
   name: 'memSubnetConnection'
+  parent: appServiceMemoryPipeline
   properties: {
     vnetResourceId: memoryStore == 'Qdrant' ? virtualNetworkId0 : null
     isSwift: true
-  }
-}
-
-resource ocrAccount 'Microsoft.CognitiveServices/accounts@2022-12-01' = {
-  name: 'ocr-${name}'
-  location: location
-  sku: {
-    name: 'S0'
-  }
-  kind: 'FormRecognizer'
-  identity: {
-    type: 'None'
-  }
-  properties: {
-    customSubDomainName: 'ocr-${name}'
-    networkAcls: {
-      defaultAction: 'Allow'
-    }
-    publicNetworkAccess: 'Enabled'
   }
 }
 

@@ -11,7 +11,6 @@ interface ServiceRequest {
 }
 
 const noResponseBodyStatusCodes = [202, 204];
-console.log(window.ENV_CONFIG);
 export const BackendServiceUrl: string =
     process.env.REACT_APP_BACKEND_URI == null || process.env.REACT_APP_BACKEND_URI.trim() === ''
         ? window.ENV_CONFIG.REACT_APP_BACKEND_URI
