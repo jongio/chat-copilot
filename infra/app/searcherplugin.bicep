@@ -3,11 +3,11 @@ param location string = resourceGroup().location
 param tags object = {}
 param appServicePlanId string
 param applicationInsightsConnectionString string
-param strorageAccount string
+param strorageAccountName string
 param webSearcherPackageUri string
 
 var strorageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.Storage/storageAccounts', strorageAccount)
+  'Microsoft.Storage/storageAccounts', strorageAccountName)
 
 resource functionAppWebSearcherPlugin 'Microsoft.Web/sites@2022-09-01' = {
   name: name
@@ -39,7 +39,7 @@ resource functionAppWebSearcherPluginConfig 'Microsoft.Web/sites/config@2022-09-
       }
       {
         name: 'AzureWebJobsStorage'
-        value: 'DefaultEndpointsProtocol=https;AccountName=${strorageAccount};AccountKey=${listKeys(strorageAccountId, '2019-06-01').keys[1].value}'
+        value: 'DefaultEndpointsProtocol=https;AccountName=${strorageAccountName};AccountKey=${listKeys(strorageAccountId, '2019-06-01').keys[1].value}'
       }
       {
         name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

@@ -1,10 +1,6 @@
 param name string
 param location string = resourceGroup().location
 param tags object = {}
-@allowed([
-  'AzureOpenAI'
-  'OpenAI'
-])
 param aiService string = 'AzureOpenAI'
 param completionModel string = 'gpt-35-turbo'
 param embeddingModel string = 'text-embedding-ada-002'
@@ -15,7 +11,7 @@ param appInsightsConnectionString string
 param azureCognitiveSearchName string
 param deployWebSearcherPlugin bool
 param allowedOrigins array = []
-param functionAppWebSearcherPlugin string
+param functionAppWebSearcherPluginName string
 param searcherPluginDefaultHostName string
 param openAIServiceName string
 param openAIEndpoint string
@@ -24,7 +20,7 @@ param virtualNetworkId0 string
 param appServiceQdrantDefaultHost string
 param deployCosmosDB bool
 param deploySpeechServices bool
-param speechAccount string
+param speechAccountName string
 param webApiClientId string
 param frontendClientId string
 param azureAdTenantId string
@@ -33,13 +29,13 @@ param cosmosAccountName string
 param cosmosAccountEndpoint string
 
 var functionAppWebSearcherPluginId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.Web/sites', functionAppWebSearcherPlugin)
+  'Microsoft.Web/sites', functionAppWebSearcherPluginName)
 var openAIId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.CognitiveServices/accounts', openAIServiceName)
 var storageAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.Storage/storageAccounts', storageAccountName)
 var speechAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
-  'Microsoft.CognitiveServices/accounts', speechAccount)
+  'Microsoft.CognitiveServices/accounts', speechAccountName)
 var cosmosAccountId = resourceId(subscription().subscriptionId, resourceGroup().name,
   'Microsoft.DocumentDB/databaseAccounts', cosmosAccountName)
 

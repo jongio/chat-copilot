@@ -80,7 +80,7 @@ param memoryStore string = 'AzureCognitiveSearch'
 param deployWebSearcherPlugin bool = false
 
 @description('Whether to deploy Cosmos DB for persistent chat storage')
-param deployCosmosDB bool = false
+param deployCosmosDB bool = true
 
 @description('Whether to deploy Azure Speech Services to enable input by voice')
 param deploySpeechServices bool = true
@@ -155,7 +155,7 @@ module api './app/api.bicep' = {
     openAIServiceName: openAI.outputs.name
     storageAccountName: storage.outputs.name
     deployWebSearcherPlugin: deployWebSearcherPlugin
-    functionAppWebSearcherPlugin: deployWebSearcherPlugin ? functionAppWebSearcherPlugin.outputs.name : ''
+    functionAppWebSearcherPluginName: deployWebSearcherPlugin ? functionAppWebSearcherPlugin.outputs.name : ''
     searcherPluginDefaultHostName: deployWebSearcherPlugin ? functionAppWebSearcherPlugin.outputs.defaulthost : ''
     allowedOrigins: [ '*' ]
     memoryStore: memoryStore
@@ -163,7 +163,7 @@ module api './app/api.bicep' = {
     appServiceQdrantDefaultHost: memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
     deployCosmosDB: deployCosmosDB
     deploySpeechServices: deploySpeechServices
-    speechAccount: deploySpeechServices ? speechAccount.outputs.name : ''
+    speechAccountName: deploySpeechServices ? speechAccount.outputs.name : ''
     azureAdTenantId: azureAdTenantId
     frontendClientId: frontendClientId
     webApiClientId: webApiClientId
@@ -222,7 +222,7 @@ module logAnalytics './core/monitor/loganalytics.bicep' = {
   name: 'loganalytics'
   scope: rg
   params: {
-    name: !empty(logAnalyticsName) ? logAnalyticsName : 'log-${resourceToken}'
+    name: !empty(logAnalyticsName) ? logAnalyticsName : '${abbrs.operationalInsightsWorkspaces}${resourceToken}'
     location: location
   }
 }
@@ -236,7 +236,7 @@ module functionAppWebSearcherPlugin './app/searcherplugin.bicep' = if (deployWeb
     tags: union(tags, { 'azd-service-name': 'searcherplugin' }, { skweb: '1' })
     applicationInsightsConnectionString: applicationInsights.outputs.instrumentationKey
     appServicePlanId: appServicePlan.outputs.id
-    strorageAccount: storage.outputs.name
+    strorageAccountName: storage.outputs.name
     webSearcherPackageUri: webSearcherPackageUri
   }
 }
@@ -260,11 +260,11 @@ module appServiceMemoryPipeline './app/memorypipeline.bicep' = {
     memoryStore: memoryStore
     virtualNetworkId0: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
     appInsightsConnectionString: applicationInsights.outputs.connectionString
-    azureCognitiveSearch: memoryStore == 'Qdrant' ? '' : azureCognitiveSearch.outputs.name
+    azureCognitiveSearchName: memoryStore == 'Qdrant' ? '' : azureCognitiveSearch.outputs.name
     openAIEndpoint: openAI.outputs.endpoint
     openAIServiceName: openAI.outputs.name
     storageAccountName: storage.outputs.name
-    appServiceQdrantDefaultHostName: memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
+    appServiceQdrantDefaultHost: memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
     ocrAccountEndpoint: ocrAccount.outputs.endpoint
     ocrAccountName: ocrAccount.outputs.name
   }
@@ -333,7 +333,7 @@ module speechAccount './core/ai/cognitiveservices.bicep' = {
   name: 'speechaccount'
   scope: rg
   params: {
-    name: !empty(speechName) ? speechName : 'speech-${resourceToken}'
+    name: !empty(speechName) ? speechName : 'speech-${abbrs.cognitiveServicesAccounts}${resourceToken}'
     location: location
     sku: {
       name: 'S0'
@@ -346,7 +346,7 @@ module ocrAccount './core/ai/cognitiveservices.bicep' = {
   scope: rg
   name: 'ocraccount'
   params: {
-    name: !empty(ocrAccountName) ? ocrAccountName : 'ocr-${resourceToken}'
+    name: !empty(ocrAccountName) ? ocrAccountName : 'ocr-${abbrs.cognitiveServicesAccounts}${resourceToken}'
     location: location
     kind: 'FormRecognizer'
   }
@@ -356,6 +356,8 @@ output AZURE_LOCATION string = location
 output AZURE_TENANT_ID string = tenant().tenantId
 output APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
 output AZURE_STORAGE_NAME string = storage.outputs.name
+output AZURE_COGNITIVESEARCH_NAME string = memoryStore == 'AzureCognitiveSearch' ? azureCognitiveSearch.outputs.name : ''
+output AZURE_APP_SERVICE_QDRANT_DEFAUL_HOST string = memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
 output REACT_APP_BACKEND_URI string = api.outputs.url
 output REACT_APP_APPLICATIONINSIGHTS_CONNECTION_STRING string = applicationInsights.outputs.connectionString
 output REACT_APP_WEB_BASE_URL string = web.outputs.uri

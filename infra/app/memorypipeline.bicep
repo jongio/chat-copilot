@@ -7,12 +7,12 @@ param embeddingModel string = 'text-embedding-ada-002'
 param memoryStore string
 param appServicePlanId string
 param appInsightsConnectionString string
-param azureCognitiveSearch string
+param azureCognitiveSearchName string
 param openAIServiceName string
 param openAIEndpoint string
 param storageAccountName string
 param virtualNetworkId0 string
-param appServiceQdrantDefaultHostName string
+param appServiceQdrantDefaultHost string
 param ocrAccountEndpoint string
 param ocrAccountName string
 
@@ -110,15 +110,15 @@ resource appServiceMemoryPipelineConfig 'Microsoft.Web/sites/config@2022-09-01' 
       }
       {
         name: 'KernelMemory:Services:AzureCognitiveSearch:Endpoint'
-        value: memoryStore == 'AzureCognitiveSearch' ? 'https://${azureCognitiveSearch}.search.windows.net' : ''
+        value: memoryStore == 'AzureCognitiveSearch' ? 'https://${azureCognitiveSearchName}.search.windows.net' : ''
       }
       {
         name: 'KernelMemory:Services:AzureCognitiveSearch:APIKey'
-        value: memoryStore == 'AzureCognitiveSearch' ? listAdminKeys('Microsoft.Search/searchServices/${azureCognitiveSearch}', '2021-04-01-preview').primaryKey : ''
+        value: memoryStore == 'AzureCognitiveSearch' ? listAdminKeys('Microsoft.Search/searchServices/${azureCognitiveSearchName}', '2021-04-01-preview').primaryKey : ''
       }
       {
         name: 'KernelMemory:Services:Qdrant:Endpoint'
-        value: memoryStore == 'Qdrant' ? 'https://${appServiceQdrantDefaultHostName}' : ''
+        value: memoryStore == 'Qdrant' ? 'https://${appServiceQdrantDefaultHost}' : ''
       }
       {
         name: 'KernelMemory:Services:AzureOpenAIText:Auth'
