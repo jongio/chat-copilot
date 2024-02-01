@@ -10,6 +10,9 @@ services:
     language: js
     host: staticwebapp
     hooks:
+      prepackage:
+        shell: pwsh
+        run: npm config set legacy-peer-deps true
       predeploy:
         windows:
           shell: pwsh
@@ -18,16 +21,8 @@ services:
           interactive: false
       postdeploy:
         windows:
-          shell: pwsh
-          run: |
-            if ($env:AZURE_FRONTEND_APPLICATION_ID -ne '') {
-              $objectId = (az ad app show --id $env:AZURE_FRONTEND_APPLICATION_ID | ConvertFrom-Json).id
-              $redirectUris = (az rest --method GET --uri "https://graph.microsoft.com/v1.0/applications/$objectId" --headers 'Content-Type=application/json' | ConvertFrom-Json).spa.redirectUris
-              $body = "{spa:{redirectUris:["
-              foreach ($uri in $redirectUris) { $body += "'$uri',"}
-              $body += ("'$env:REACT_APP_WEB_BASE_URL'" + "]}}")
-              az rest --method PATCH --uri "https://graph.microsoft.com/v1.0/applications/$objectId" --headers 'Content-Type=application/json' --body $body
-            }
+        shell: pwsh
+        run: ./add-redirecturl.ps1
   api:
     project: ./webapi
     language: dotnet
@@ -36,9 +31,3 @@ services:
     project: ./memorypipeline
     host: appservice
     language: dotnet
-hooks:
-  prepackage:
-    shell: pwsh
-    run: npm config set legacy-peer-deps true
-
-
