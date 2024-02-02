@@ -11,23 +11,22 @@ services:
     host: staticwebapp
     hooks:
       prepackage:
-        shell: pwsh
-        run: npm config set legacy-peer-deps true
+        windows:
+          shell: pwsh
+          run: npm config set legacy-peer-deps true
       predeploy:
         windows:
           shell: pwsh
           run: node entrypoint.cjs -o ./build/env-config.js
-          continueOnError: false
-          interactive: false
       postdeploy:
         windows:
-        shell: pwsh
-        run: ./add-redirecturl.ps1
+          shell: pwsh
+          run: ./add-redirecturl.ps1
   api:
     project: ./webapi
     language: dotnet
     host: appservice
   memorypipeline:
     project: ./memorypipeline
-    host: appservice
     language: dotnet
+    host: appservice
