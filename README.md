@@ -32,7 +32,46 @@ You will need the following items to run the sample:
 | Azure OpenAI | - [Access](https://aka.ms/oai/access)<br>- [Resource](https://learn.microsoft.com/azure/ai-services/openai/how-to/create-resource?pivots=web-portal#create-a-resource)<br>- [Deployed models](https://learn.microsoft.com/azure/ai-services/openai/how-to/create-resource?pivots=web-portal#deploy-a-model) (`gpt-35-turbo` and `text-embedding-ada-002`) <br>- [Endpoint](https://learn.microsoft.com/azure/ai-services/openai/tutorials/embeddings?tabs=command-line#retrieve-key-and-endpoint)<br>- [API key](https://learn.microsoft.com/azure/ai-services/openai/tutorials/embeddings?tabs=command-line#retrieve-key-and-endpoint) |
 | OpenAI       | - [Account](https://platform.openai.com/docs/overview)<br>- [API key](https://platform.openai.com/api-keys)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 
-# Instructions
+# Running the sample using the Azure Developer CLI (azd)
+
+The Azure Developer CLI (`azd`) is a developer-centric command-line interface (CLI) tool for creating Azure applications.
+
+You need to install it before running and deploying with the Azure Developer CLI.
+
+## Windows
+
+```powershell
+powershell -ex AllSigned -c "Invoke-RestMethod 'https://aka.ms/install-azd.ps1' | Invoke-Expression"
+```
+
+## Linux/MacOS
+
+```
+curl -fsSL https://aka.ms/install-azd.sh | bash
+```
+
+After logging in with the following command, you will be able to use the `azd` cli to quickly provision and deploy the application.
+
+```
+azd auth login
+```
+
+Then, execute the `azd init` command to initialize the environment (You do not need to run this command if you already have the code or have opened this in a Codespace or DevContainer).
+```
+azd init -t jongio/chat-copilot
+```
+Enter an environment name.
+
+Next, run `azd up` to provision all the resources to Azure and deploy the code to those resources.
+```
+azd up 
+```
+
+Select your desired `subscription` and `location`. Then choose a resource group or create a new resource group. Wait a moment for the resource deployment to complete, click the Website endpoint and you will see the web app page.
+
+You can also run the sample directly locally (See below).
+
+# Running the sample locally
 
 ## Windows
 
