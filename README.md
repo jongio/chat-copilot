@@ -25,6 +25,7 @@ You will need the following items to run the sample:
 - [.NET 7.0 SDK](https://dotnet.microsoft.com/download/dotnet/7.0) _(via Setup install.\* script)_
 - [Node.js](https://nodejs.org/en/download) _(via Setup install.\* script)_
 - [Yarn](https://classic.yarnpkg.com/docs/install) _(via Setup install.\* script)_
+- [JQ](https://jqlang.github.io/jq/download/) _(Install manually, only required in linux/macos env)_
 - AI Service
 
 | AI Service   | Requirement                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
@@ -58,7 +59,7 @@ azd auth login
 
 Then, execute the `azd init` command to initialize the environment (You do not need to run this command if you already have the code or have opened this in a Codespace or DevContainer).
 ```
-azd init -t jongio/chat-copilot
+azd init -t microsoft/chat-copilot
 ```
 Enter an environment name.
 
@@ -197,7 +198,9 @@ You can also run the sample directly locally (See below).
 
 ## (Optional) Run the [memory pipeline](./memorypipeline/README.md)
 
-By default, the webapi is configured to work without the memory pipeline for synchronous processing documents. To enable asynchronous document processing, you need to configure the webapi and the memory pipeline. Please refer to the [webapi README](./webapi/README.md) and the [memory pipeline README](./memorypipeline/README.md) for more information.
+By default, the webapi is configured to work without the memory pipeline for synchronous processing documents locally. To enable asynchronous document processing, you need to configure the webapi and the memory pipeline. Please refer to the [webapi README](./webapi/README.md) and the [memory pipeline README](./memorypipeline/README.md) for more information.
+
+***Notes:*** If you run the sample using the Azure Developer CLI (azd), memory pipeline has been configured and deployed, no additional action is required.
 
 ## (Optional) Enable backend authentication via Azure AD
 
@@ -293,6 +296,12 @@ By default, Chat Copilot runs locally without authentication, using a guest user
    - `TENANT_ID` : Your Azure AD tenant ID
    - `AZURE_AD_INSTANCE` _(optional)_: The Azure AD cloud instance for the authenticating users. Defaults to `https://login.microsoftonline.com`.
 
+   ***Notes:*** If you want to use the Azure Developer CLI (azd) to set up authentication, please run the following `azd env` commands.
+      ```
+      azd env set AZURE_AD_TENANT_ID 'YOUR_TENANT_ID'
+      azd env set AZURE_BACKEND_APPLICATION_ID 'YOUR_BACKEND_APPLICATION_ID'
+      azd env set AZURE_FRONTEND_APPLICATION_ID 'YOUR_FRONTEND_APPLICATION_ID'
+      ```
 6. Run Chat Copilot locally. This step starts both the backend API and frontend application.
 
    **Powershell**
@@ -306,7 +315,7 @@ By default, Chat Copilot runs locally without authentication, using a guest user
    ```bash
    ./start.sh
    ```
-
+   ***Notes:*** If you want to use the Azure Developer CLI (azd) to run this project, please run the command `azd up`.
 # Troubleshooting
 
 1. **_Issue:_** Unable to load chats.
@@ -367,6 +376,23 @@ By default, Chat Copilot runs locally without authentication, using a guest user
    sudo apt update;
    sudo apt install --assume-yes dotnet-sdk-7.0;
    ```
+
+6. **_Issue:_** Lack of permission to execute `webapp/add-redirecturl.sh` file.
+  
+   _Details_: "ERROR: failed deploying service 'web': failed invoking event handlers for 'postdeploy', 'postdeploy' hook failed with exit code: '126', Path: './add-redirecturl.sh'. : exit code: 126, stdout: , stderr: /bin/sh: 1: ./add-redirecturl.sh: Permission denied" when the `azd deploy` command is executed on Linux/macOS, the postdeploy hook of the web is triggered.
+   
+   _Solution_: Add execution permissions to files.
+   ```
+   chmod +x webapp/add-redirecturl.sh
+   ```
+
+7. **_Issue:_** az command is not available.
+
+   _Details_: "The term 'az' is not recognized as a name of a cmdlet, function, script file, or executable program. Check the spelling of the name, or if a path was included, verify that the path is correct and try again" when running `azd deploy` with backend authentication enabled via Azure AD.
+
+   _Explanation_: After enabling backend authentication via Azure AD, running `azd deploy` will trigger the postdeploy hook of the web. The hook will run `webapp/add-redirecturl.sh` or `webapp/add-redirecturl.ps1` script file, and the az command is used in the script.
+
+   _Solution_: Install [Azure CLI](https://learn.microsoft.com/en-us/cli/azure/install-azure-cli) and execute the command `az login`.
 
 # A note on branches
 

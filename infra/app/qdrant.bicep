@@ -1,8 +1,8 @@
 param name string
 param location string = resourceGroup().location
 param appServicePlanQdrantId string
-param virtualNetworkId0 string
-param virtualNetworkId1 string
+param webSubnetId string
+param qdrantSubnetId string
 param storageFileShareName string
 param strorageAccountName string
 
@@ -18,7 +18,7 @@ resource appServiceQdrant 'Microsoft.Web/sites@2022-09-01' = {
     httpsOnly: true
     reserved: true
     clientCertMode: 'Required'
-    virtualNetworkSubnetId: virtualNetworkId1
+    virtualNetworkSubnetId: qdrantSubnetId
     siteConfig: {
       numberOfWorkers: 1
       linuxFxVersion: 'DOCKER|qdrant/qdrant:latest'
@@ -26,7 +26,7 @@ resource appServiceQdrant 'Microsoft.Web/sites@2022-09-01' = {
       vnetRouteAllEnabled: true
       ipSecurityRestrictions: [
         {
-          vnetSubnetResourceId: virtualNetworkId0
+          vnetSubnetResourceId: webSubnetId
           action: 'Allow'
           priority: 300
           name: 'Allow front vnet'
@@ -55,7 +55,7 @@ resource qdrantSubnetConnection 'Microsoft.Web/sites/virtualNetworkConnections@2
   name: 'qdrantSubnetConnection'
   parent: appServiceQdrant
   properties: {
-    vnetResourceId: virtualNetworkId1
+    vnetResourceId: qdrantSubnetId
     isSwift: true
   }
 }

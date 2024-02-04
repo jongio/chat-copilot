@@ -31,7 +31,10 @@ param azureCognitiveSearchName string = ''
 param functionAppWebName string = ''
 param appServiceMemoryPipelineName string = ''
 param appServiceQdrantName string = ''
-param storageFileShareName string = 'aciqdrantshare'
+param fileSharesName string = 'aciqdrantshare'
+param storageFileShareName array = [ {
+    name: fileSharesName
+  } ]
 param cosmosDbAccountName string = ''
 param speechName string = ''
 param azureAdTenantId string = ''
@@ -159,7 +162,7 @@ module api './app/api.bicep' = {
     searcherPluginDefaultHostName: deployWebSearcherPlugin ? functionAppWebSearcherPlugin.outputs.defaulthost : ''
     allowedOrigins: [ '*' ]
     memoryStore: memoryStore
-    virtualNetworkId0: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
+    virtualNetworkId: memoryStore == 'Qdrant' ? virtualNetwork.outputs.webSubnetId : ''
     appServiceQdrantDefaultHost: memoryStore == 'Qdrant' ? appServiceQdrant.outputs.defaultHost : ''
     deployCosmosDB: deployCosmosDB
     deploySpeechServices: deploySpeechServices
@@ -182,14 +185,13 @@ module web './core/host/staticwebapp.bicep' = {
   }
 }
 
-module storage './app/storage.bicep' = {
+module storage './core/storage/storage-account.bicep' = {
   scope: rg
   name: 'storage'
   params: {
     location: location
-    memoryStore: memoryStore
     name: !empty(storageAccountName) ? storageAccountName : '${abbrs.storageStorageAccounts}${resourceToken}'
-    storageFileShareName: storageFileShareName
+    fileShares: storageFileShareName
   }
 }
 
@@ -258,7 +260,7 @@ module appServiceMemoryPipeline './app/memorypipeline.bicep' = {
     tags: union(tags, { 'azd-service-name': 'memorypipeline' }, { skweb: '1' })
     appServicePlanId: appServicePlan.outputs.id
     memoryStore: memoryStore
-    virtualNetworkId0: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
+    virtualNetworkId: memoryStore == 'Qdrant' ? virtualNetwork.outputs.webSubnetId : ''
     appInsightsConnectionString: applicationInsights.outputs.connectionString
     azureCognitiveSearchName: memoryStore == 'Qdrant' ? '' : azureCognitiveSearch.outputs.name
     openAIEndpoint: openAI.outputs.endpoint
@@ -290,10 +292,10 @@ module appServiceQdrant './app/qdrant.bicep' = if (memoryStore == 'Qdrant') {
     location: location
     appServicePlanQdrantId: memoryStore == 'Qdrant' ? appServicePlanQdrant.outputs.id : ''
     name: !empty(appServiceQdrantName) ? appServiceQdrantName : '${abbrs.webSitesAppService}qdrant-${resourceToken}'
-    storageFileShareName: storageFileShareName
+    storageFileShareName: fileSharesName
     strorageAccountName: storage.outputs.name
-    virtualNetworkId0: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id0 : ''
-    virtualNetworkId1: memoryStore == 'Qdrant' ? virtualNetwork.outputs.id1 : ''
+    webSubnetId: memoryStore == 'Qdrant' ? virtualNetwork.outputs.webSubnetId : ''
+    qdrantSubnetId: memoryStore == 'Qdrant' ? virtualNetwork.outputs.qdrantSubnetId : ''
   }
 }
 

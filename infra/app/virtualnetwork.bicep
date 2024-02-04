@@ -99,5 +99,5 @@ resource qdrantNsg 'Microsoft.Network/networkSecurityGroups@2022-11-01' = {
   }
 }
 
-output id0 string = virtualNetWork.properties.subnets[0].id
-output id1 string = virtualNetWork.properties.subnets[1].id
+output webSubnetId string = virtualNetWork.properties.subnets[0].id
+output qdrantSubnetId string = virtualNetWork.properties.subnets[1].id

@@ -12,6 +12,7 @@ param allowBlobPublicAccess bool = true
 param allowCrossTenantReplication bool = true
 param allowSharedKeyAccess bool = true
 param containers array = []
+param fileShares array = []
 param defaultToOAuthAuthentication bool = false
 param deleteRetentionPolicy object = {}
 @allowed([ 'AzureDnsZone', 'Standard' ])
@@ -55,6 +56,21 @@ resource storage 'Microsoft.Storage/storageAccounts@2022-05-01' = {
       name: container.name
       properties: {
         publicAccess: contains(container, 'publicAccess') ? container.publicAccess : 'None'
+      }
+    }]
+  }
+
+  resource fileServices 'fileServices' = if (!empty(fileShares)) {
+    name: 'default'
+    properties: {
+      cors: {
+        corsRules: []
+      }
+    }
+    resource share 'shares' = [for share in fileShares: {
+      name: share.name
+      properties: {
+        metadata: {}
       }
     }]
   }

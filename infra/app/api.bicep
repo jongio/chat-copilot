@@ -16,7 +16,7 @@ param searcherPluginDefaultHostName string
 param openAIServiceName string
 param openAIEndpoint string
 param storageAccountName string
-param virtualNetworkId0 string
+param virtualNetworkId string
 param appServiceQdrantDefaultHost string
 param deployCosmosDB bool
 param deploySpeechServices bool
@@ -52,7 +52,7 @@ resource apiService 'Microsoft.Web/sites@2022-09-01' = {
         allowedOrigins: allowedOrigins
       }
     }
-    virtualNetworkSubnetId: memoryStore == 'Qdrant' ? virtualNetworkId0 : null
+    virtualNetworkSubnetId: memoryStore == 'Qdrant' ? virtualNetworkId : null
   }
 }
 
@@ -60,7 +60,7 @@ resource webSubnetConnection 'Microsoft.Web/sites/virtualNetworkConnections@2022
   name: 'webSubnetConnection'
   parent: apiService
   properties: {
-    vnetResourceId: virtualNetworkId0
+    vnetResourceId: virtualNetworkId
     isSwift: true
   }
 }

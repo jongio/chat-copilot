@@ -11,7 +11,7 @@ param azureCognitiveSearchName string
 param openAIServiceName string
 param openAIEndpoint string
 param storageAccountName string
-param virtualNetworkId0 string
+param virtualNetworkId string
 param appServiceQdrantDefaultHost string
 param ocrAccountEndpoint string
 param ocrAccountName string
@@ -30,7 +30,7 @@ resource appServiceMemoryPipeline 'Microsoft.Web/sites@2022-09-01' = {
   tags: tags
   properties: {
     serverFarmId: appServicePlanId
-    virtualNetworkSubnetId: memoryStore == 'Qdrant' ? virtualNetworkId0 : null
+    virtualNetworkSubnetId: memoryStore == 'Qdrant' ? virtualNetworkId : null
     siteConfig: {
       alwaysOn: true
     }
@@ -203,7 +203,7 @@ resource memSubnetConnection 'Microsoft.Web/sites/virtualNetworkConnections@2022
   name: 'memSubnetConnection'
   parent: appServiceMemoryPipeline
   properties: {
-    vnetResourceId: memoryStore == 'Qdrant' ? virtualNetworkId0 : null
+    vnetResourceId: memoryStore == 'Qdrant' ? virtualNetworkId : null
     isSwift: true
   }
 }
