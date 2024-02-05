@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=https://raw.githubusercontent.com/Azure/azure-dev/main/schemas/v1.0/azure.yaml.json
+
+name: copilot
+metadata:
+  template: copilot@0.0.1-beta
+services:
+  web:
+    project: ./webapp
+    dist: build
+    language: js
+    host: staticwebapp
+    hooks:
+      prepackage:
+        windows:
+          shell: pwsh
+          run: npm config set legacy-peer-deps true
+        posix:
+          shell: sh
+          run: npm config set legacy-peer-deps true
+      predeploy:
+        windows:
+          shell: pwsh
+          run: node entrypoint.cjs -o ./build/env-config.js
+        posix:
+          shell: sh
+          run: node entrypoint.cjs -o ./build/env-config.js
+      postdeploy:
+        windows:
+          shell: pwsh
+          run: ./add-redirecturl.ps1
+          interactive: true
+        posix:
+          shell: sh
+          run: ./add-redirecturl.sh
+          interactive: true
+  api:
+    project: ./webapi
+    language: dotnet
+    host: appservice
+  memorypipeline:
+    project: ./memorypipeline
+    language: dotnet
+    host: appservice
