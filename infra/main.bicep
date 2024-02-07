@@ -236,7 +236,7 @@ module functionAppWebSearcherPlugin './app/searcherplugin.bicep' = if (deployWeb
     name: !empty(functionAppWebName) ? functionAppWebName : '${abbrs.webSitesFunctions}${resourceToken}'
     location: location
     tags: union(tags, { 'azd-service-name': 'searcherplugin' }, { skweb: '1' })
-    applicationInsightsConnectionString: applicationInsights.outputs.instrumentationKey
+    applicationInsightsConnectionString: applicationInsights.outputs.connectionString
     appServicePlanId: appServicePlan.outputs.id
     strorageAccountName: storage.outputs.name
     webSearcherPackageUri: webSearcherPackageUri
